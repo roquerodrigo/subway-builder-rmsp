@@ -1,0 +1,16 @@
+[project]
+name = "rmsp-subway-builder"
+version = "0.1.0"
+description = "RMSP (São Paulo) custom-city map generator for Subway Builder"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyshp",       # shapefile reader (OD zones)
+    "dbfread",     # DBF reader (OD survey microdata)
+    "pyproj",      # reproject Córrego Alegre UTM 23S -> WGS84
+    "shapely",     # polygon ops / simplification / buffering
+]
+
+# Application (scripts in pipeline/), not an installable package.
+[tool.uv]
+package = false

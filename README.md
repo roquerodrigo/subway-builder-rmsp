@@ -33,10 +33,15 @@ rmsp-subway-builder/
 
 ## Pré-requisitos
 
+Ferramentas de sistema + ambiente Python gerenciado por [uv](https://docs.astral.sh/uv/):
+
 ```bash
-brew install osmium-tool tippecanoe pmtiles osrm-backend
-python3 -m pip install -r requirements.txt
+brew install osmium-tool tippecanoe pmtiles osrm-backend uv
+uv sync                       # cria o venv e instala as deps (pyproject.toml/uv.lock)
 ```
+
+Os scripts Python rodam com `uv run python …` (usam o venv do projeto
+automaticamente).
 
 A pasta de dados do jogo é resolvida por `SB_DATA_DIR`
 (default `~/Library/Application Support/metro-maker4`). Exporte outra se o seu
@@ -71,20 +76,20 @@ unzip -o sources/od2023.zip -d sources/od2023
 bash 01_extract.sh
 
 # 3) gerar os 5 arquivos de dados (saída em pipeline/out/)
-python3 02_roads.py
-python3 03_buildings.py     # pesado: ~minutos, alguns GB de RAM
-python3 04_water.py
-python3 05_airports.py
-python3 06_demand.py        # demanda real da Pesquisa OD
+uv run python 02_roads.py
+uv run python 03_buildings.py   # pesado: ~minutos, alguns GB de RAM
+uv run python 04_water.py
+uv run python 05_airports.py
+uv run python 06_demand.py      # demanda real da Pesquisa OD
 
 # 4) trajetos viários reais dos commuters (OSRM, sem Docker)
-bash 08_routes.sh           # build do grafo + roteamento + simplificação
+bash 08_routes.sh               # build do grafo + roteamento + simplificação
 
 # 5) basemap vetorial (tiles)
 bash 07_tiles.sh
 
 # 6) validar e instalar no jogo
-python3 validate.py
+uv run python validate.py
 bash install.sh
 ```
 

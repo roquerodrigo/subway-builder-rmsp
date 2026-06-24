@@ -3,6 +3,7 @@
 # pop's drivingPath with the real road route (route_paths.py). No Docker needed.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
+PROJECT="$(cd "$HERE/.." && pwd)"
 cd "$HERE/sources"
 PROFILE="$(brew --prefix osrm-backend)/share/osrm-backend/profiles/car.lua"
 PBF="rmsp.osm.pbf"
@@ -21,11 +22,11 @@ OSRM_PID=$!
 sleep 5
 
 echo "==> routing pops -> road geometry"
-python3 "$HERE/route_paths.py"
+uv run --project "$PROJECT" python "$HERE/route_paths.py"
 
 echo "==> stopping osrm-routed"
 kill "$OSRM_PID" 2>/dev/null || true
 
 echo "==> simplifying paths (Douglas-Peucker) to keep the file light"
-python3 "$HERE/simplify_paths.py" 0.002
+uv run --project "$PROJECT" python "$HERE/simplify_paths.py" 0.002
 echo "==> done"

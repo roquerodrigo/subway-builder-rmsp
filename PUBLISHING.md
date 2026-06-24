@@ -38,9 +38,21 @@ Para versões futuras: rode `rmsp bundle --version X.Y.Z` e
 `gh release create vX.Y.Z data/dist/RMSP.zip` (a `version` do config.json
 precisa casar com a tag).
 
-## 3. Abrir a issue *Publish New Map*
+## 3. Abrir a issue *Publish New Map* — link pronto
 
-Valores prontos para o formulário:
+Tem que ser pelo **formulário** (ele aplica o label `publish-map`; uma issue via API
+sem label é fechada automática pelo `close-invalid.yml`). Link pré-preenchido com tudo:
+
+**[→ Abrir a issue pré-preenchida](https://github.com/Subway-Builder-Modded/registry/issues/new?template=publish-map.yml&title=%5BPublish%20Map%5D%3A%20S%C3%A3o%20Paulo%20%28RMSP%29&map-id=sao-paulo-rmsp&name=S%C3%A3o%20Paulo%20%28RMSP%29&included-cities=Guarulhos%2C%20Osasco%2C%20Santo%20Andr%C3%A9%2C%20S%C3%A3o%20Bernardo%20do%20Campo%2C%20Diadema&city-code=RMSP&country=BR&description=The%20largest%20metropolis%20in%20the%20Southern%20Hemisphere%20%E2%80%94%20the%20central%20urban%20core%20of%20Greater%20S%C3%A3o%20Paulo%20%28capital%2C%20ABC%20region%2C%20Guarulhos%2C%20Osasco%2C%20Diadema%29%2C%20~17M%20residents%20and%20~9M%20jobs.%20Real%20demand%20from%20the%20S%C3%A3o%20Paulo%20Metro%202023%20Origin%E2%80%93Destination%20survey%2C%20with%20commute%20routes%20pre-calculated%20along%20roads%20%28OSRM%29.%20Includes%20neighborhood%20labels%2C%20parks%2Freserves%2C%20water%20and%20the%20GRU%20and%20CGH%20airports.&data_source=Metr%C3%B4-SP%20OD%202023%20%2F%20OSM&source_quality=high-quality&level_of_detail=medium-detail&methodology=Demand%20derived%20from%20the%20S%C3%A3o%20Paulo%20Metro%202023%20Origin%E2%80%93Destination%20survey%20%28434%20OD%20zones%29%3A%20residents%2Fjobs%20per%20zone%20%28FE_PESS%29%20and%20home%E2%86%92work%2Feducation%20pairs%20%28FE_VIA%2C%20origin%20motive%20%3D%20home%29%20expanded%20by%20the%20survey%20weights%3B%20zone%20centroids%20as%20demand%20points%3B%20commute%20trips%20routed%20along%20streets%20via%20OSRM.%20Streets%2C%20buildings%20%28with%20height%29%2C%20water%2C%20parks%20and%20labels%20from%20OSM.&location=south-america&gallery=https%3A%2F%2Fraw.githubusercontent.com%2Froquerodrigo%2Fsubway-builder-rmsp%2Fmain%2Fgallery%2Fscreenshot1.webp%0Ahttps%3A%2F%2Fraw.githubusercontent.com%2Froquerodrigo%2Fsubway-builder-rmsp%2Fmain%2Fgallery%2Fscreenshot2.webp%0Ahttps%3A%2F%2Fraw.githubusercontent.com%2Froquerodrigo%2Fsubway-builder-rmsp%2Fmain%2Fgallery%2Fscreenshot3.webp&source=https%3A%2F%2Fgithub.com%2Froquerodrigo%2Fsubway-builder-rmsp&update-type=GitHub%20Releases&github-repo=roquerodrigo%2Fsubway-builder-rmsp)**
+
+Ao abrir, só falta marcar **2 caixas** (não dá pra pré-marcar por URL):
+1. **Special Demand → airports**
+2. **Terms** (atestação de autoria)
+
+…e clicar **Create**. As imagens da galeria já estão hospedadas em `gallery/` do
+repo (screenshot1 = Ibirapuera, 2 = centro, 3 = rios).
+
+Valores pré-preenchidos (referência):
 
 | Campo | Valor |
 |---|---|

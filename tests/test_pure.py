@@ -1,6 +1,32 @@
 """Unit tests for the deterministic, dependency-free helpers."""
 
-from rmsp import layers, routing
+from rmsp import layers, routing, tiles
+
+
+def test_bldg_height_from_height_tag():
+    assert tiles._bldg_height({"height": "12.5"}) == 12.5
+    assert tiles._bldg_height({"height": "30 m"}) == 30.0
+    assert tiles._bldg_height({"height": "18;24"}) == 18.0  # multi-value -> first
+
+
+def test_bldg_height_from_levels():
+    assert tiles._bldg_height({"building:levels": "10"}) == 32.0  # 10 × 3.2 m
+    assert tiles._bldg_height({"building:levels": "2"}) == 6.4
+
+
+def test_bldg_height_missing_or_bad():
+    assert tiles._bldg_height({}) is None
+    assert tiles._bldg_height({"height": "tall"}) is None
+    assert tiles._bldg_height({"building:levels": "n/a"}) is None
+
+
+def test_label_classes_partition():
+    # the three label layers must not overlap and cover the extracted place classes
+    seen = set()
+    for classes in tiles._LABEL_CLASSES.values():
+        assert not (seen & classes)
+        seen |= classes
+    assert {"city", "town", "suburb", "neighbourhood"} <= seen
 
 
 def test_road_class():

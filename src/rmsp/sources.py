@@ -38,6 +38,13 @@ LAYERS: dict[str, tuple[list[str], str, list[str]]] = {
         "polygon",
         [],
     ),
+    # place labels (points): the game renders city_labels / suburb_labels /
+    # neighborhood_labels symbol layers from `name`. tiles.py splits these by class.
+    "places": (
+        ["n/place=city,town,suburb,borough,neighbourhood,quarter,hamlet,village"],
+        "point",
+        [],
+    ),
 }
 
 

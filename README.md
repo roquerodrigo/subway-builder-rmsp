@@ -74,9 +74,12 @@ Brasil → São Paulo (RMSP)**.
   `pops` = pares origem→destino (casa↔trabalho/educação) expandidos. Cada pop é
   listado nos `popIds` das **duas** zonas (senão a aba *Workers* fica sem
   horários). `drivingPath` segue as ruas via OSRM, simplificado por Douglas-Peucker.
-- **Basemap**: PMTiles com camadas `water/parks/buildings/airports` (nomes nativos
-  do estilo do jogo). `index.js` liga `oceanFoundations:false` — sem isso a camada
-  `water` do jogo fica `visibility:none` e a água não aparece.
+- **Basemap**: PMTiles com as camadas que o estilo do jogo renderiza —
+  `water/parks/buildings/airports`, os rótulos `city_labels/suburb_labels/
+  neighborhood_labels` e as fundações `foundations/ocean_foundations`. Cada feature
+  carrega só a propriedade que a camada lê: `parks→area`, `buildings→height` (m),
+  `water/ocean_foundations→depth_min`, labels→`name`. `index.js` liga
+  `oceanFoundations:false` — sem isso a camada `water` fica `visibility:none`.
 - **API v1.0.0**: confirmado via `SubwayBuilderAPI` (`{"version":"1.0.0"}`),
   mesmo no app 1.3.0.
 

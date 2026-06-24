@@ -8,7 +8,7 @@ Um mantenedor + validação automática criam o PR `maps/<id>/manifest.json`.
 
 ```bash
 uv run rmsp all          # gera dados + tiles (se ainda não rodou)
-uv run rmsp bundle --version 1.0.0 --repo https://github.com/<owner>/subway-builder-rmsp
+uv run rmsp bundle --version 1.0.0 --repo https://github.com/roquerodrigo/subway-builder-rmsp
 ```
 
 Saída em `data/dist/`:
@@ -25,13 +25,18 @@ O ZIP bate com a validação do registry (`scripts/lib/integrity.ts`): `config.j
 do `config.json` **tem que bater com a tag** do Release. Fundações vêm do
 `buildings_index` em runtime, então o pmtiles do basemap basta.
 
-## 2. Hospedar (Release público)
+## 2. Hospedar (Release público) — ✅ feito
 
-```bash
-gh repo create <owner>/subway-builder-rmsp --public --source . --push
-gh release create v1.0.0 data/dist/RMSP.zip \
-  --title "RMSP v1.0.0" --notes "Primeira versão."
-```
+Repo e Release já estão no ar:
+
+- Repo: <https://github.com/roquerodrigo/subway-builder-rmsp> (público)
+- Release `v1.0.0` + asset `RMSP.zip` (206 MB):
+  <https://github.com/roquerodrigo/subway-builder-rmsp/releases/download/v1.0.0/RMSP.zip>
+- sha256: `88fa83a89bd11e9f7ff4cdc1b9b7b7ef55bf67d850e7de4869e91754994ac050`
+
+Para versões futuras: rode `rmsp bundle --version X.Y.Z` e
+`gh release create vX.Y.Z data/dist/RMSP.zip` (a `version` do config.json
+precisa casar com a tag).
 
 ## 3. Abrir a issue *Publish New Map*
 
@@ -52,9 +57,9 @@ Valores prontos para o formulário:
 | **Location** | South America |
 | **Special Demand** | airports (GRU + CGH) |
 | **Gallery** | **≥1 screenshot do jogo (obrigatório)** — capturar in-game |
-| **Source URL** | `https://github.com/<owner>/subway-builder-rmsp` |
+| **Source URL** | `https://github.com/roquerodrigo/subway-builder-rmsp` |
 | **Update Type** | GitHub Releases |
-| **GitHub Repository** | `<owner>/subway-builder-rmsp` |
+| **GitHub Repository** | `roquerodrigo/subway-builder-rmsp` |
 
 Se a validação falhar, edite a issue e comente **revalidate**.
 

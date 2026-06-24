@@ -1,0 +1,10 @@
+{
+    "id": "br.rodrigo.rmsp",
+    "name": "RMSP - São Paulo",
+    "description": "Região Metropolitana de São Paulo (mancha urbana central: capital, ABC, Guarulhos, Osasco, Diadema). Ruas, prédios, água e demanda baseada na Pesquisa OD 2017.",
+    "version": "1.0.0",
+    "author": {
+        "name": "Rodrigo Roque"
+    },
+    "main": "index.js"
+}

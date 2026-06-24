@@ -1,0 +1,8 @@
+# Python deps for the RMSP map-generation pipeline.
+# System tools (install via brew): osmium-tool, tippecanoe, pmtiles, osrm-backend
+pyshp
+pandas
+pyproj
+dbfread
+shapely
+mapbox-vector-tile

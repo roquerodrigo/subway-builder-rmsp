@@ -1,10 +1,12 @@
 """Build demand_data.json(.gz) from the real Pesquisa Origem-Destino (Metrô-SP).
 
-points: one per OD zone whose centroid falls inside the bbox, with real residents
-        (sum of person expansion FE_PESS by home zone) and jobs (by workplace zone).
 pops:   home-based work/education trips aggregated by (origin, dest) zone, listed
         on BOTH endpoints' popIds (else the Workers tab has no arrival/departure).
         drivingPath starts as a straight line; routing.py replaces it with roads.
+points: one per OD zone referenced by a pop. residents/jobs are the commute-matrix
+        marginals (Σ pop.size by home / by workplace), NOT the total population —
+        the game requires Σ residents == Σ jobs == Σ pop.size (verified in shipped
+        cities and enforced by the Railyard registry).
 """
 
 from __future__ import annotations
@@ -82,23 +84,10 @@ def build_demand() -> None:
     zones = _zone_centroids(zones_shp)
     log.info("zones in bbox: %d", len(zones))
 
-    residents: dict[int, float] = collections.defaultdict(float)
-    jobs: dict[int, float] = collections.defaultdict(float)
-    seen_person: set = set()
     od: dict[tuple[int, int], list[float]] = collections.defaultdict(lambda: [0.0, 0.0, 0.0])
-
     nrows = 0
     for r in DBF(str(od_dbf), encoding="latin-1", raw=False):
         nrows += 1
-        pkey = (r.get("ID_DOM"), r.get("ID_FAM"), r.get("ID_PESS"))
-        if pkey not in seen_person:
-            seen_person.add(pkey)
-            fp = r.get("FE_PESS") or 0.0
-            if fp:
-                if (hz := _as_int(r.get("ZONA"))) in zones:
-                    residents[hz] += fp
-                if (wz := _as_int(r.get("ZONATRA1"))) in zones:
-                    jobs[wz] += fp
         fv = r.get("FE_VIA") or 0.0
         if not fv:
             continue
@@ -114,23 +103,15 @@ def build_demand() -> None:
         e[1] += (r.get("DISTANCIA") or 0.0) * fv
         e[2] += (r.get("DURACAO") or 0.0) * fv
 
-    log.info("rows=%d persons=%d od-pairs=%d", nrows, len(seen_person), len(od))
+    log.info("rows=%d od-pairs=%d", nrows, len(od))
 
-    points = [
-        {
-            "id": f"z{z}",
-            "location": [lng, lat],
-            "jobs": round(jobs.get(z, 0.0)),
-            "residents": round(residents.get(z, 0.0)),
-            "popIds": [],
-        }
-        for z, (lng, lat, _name) in sorted(zones.items())
-    ]
-    by_id = {p["id"]: p for p in points}
-
+    # Build pops first; residents/jobs are the surviving pops' marginals so that
+    # Σ residents == Σ jobs == Σ pop.size (the game/registry invariant).
+    residents: dict[int, int] = collections.defaultdict(int)
+    jobs: dict[int, int] = collections.defaultdict(int)
     pops = []
     total = 0
-    for seq, ((o, d), (size_f, distw, durw)) in enumerate(od.items(), 1):
+    for seq, ((o, d), (size_f, distw, durw)) in enumerate(sorted(od.items()), 1):
         size = round(size_f)
         if size < settings.min_pop_size:
             continue
@@ -145,10 +126,9 @@ def build_demand() -> None:
             if dur_min > 0
             else round(dist_m / (_speed_kmh(dist_m / 1000) * 1000 / 3600))
         )
-        pid = f"p{seq:05d}"
         pops.append(
             {
-                "id": pid,
+                "id": f"p{seq:05d}",
                 "size": size,
                 "residenceId": f"z{o}",
                 "jobId": f"z{d}",
@@ -157,21 +137,36 @@ def build_demand() -> None:
                 "drivingPath": [[olng, olat], [dlng, dlat]],
             }
         )
-        by_id[f"z{o}"]["popIds"].append(pid)
-        by_id[f"z{d}"]["popIds"].append(pid)
+        residents[o] += size
+        jobs[d] += size
         total += size
+
+    points = [
+        {
+            "id": f"z{z}",
+            "location": [zones[z][0], zones[z][1]],
+            "jobs": jobs.get(z, 0),
+            "residents": residents.get(z, 0),
+            "popIds": [],
+        }
+        for z in sorted(set(residents) | set(jobs))
+    ]
+    by_id = {p["id"]: p for p in points}
+    for pop in pops:
+        by_id[pop["residenceId"]]["popIds"].append(pop["id"])
+        by_id[pop["jobId"]]["popIds"].append(pop["id"])
 
     demand = {"points": points, "pops": pops}
     geojson.write_json(demand, settings.build_dir / "demand_data.json")
     out = settings.build_dir / "demand_data.json.gz"
     geojson.write_json_gz(demand, out)
     log.info(
-        "points=%d pops=%d commuters=%d residents=%d jobs=%d -> %s (%.2f MB)",
+        "points=%d pops=%d | Σresidents=%d Σjobs=%d Σpop.size=%d -> %s (%.2f MB)",
         len(points),
         len(pops),
+        sum(residents.values()),
+        sum(jobs.values()),
         total,
-        round(sum(residents.values())),
-        round(sum(jobs.values())),
         out.name,
         geojson.mb(out),
     )

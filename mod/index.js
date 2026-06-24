@@ -2,7 +2,7 @@
 //  RMSP — Região Metropolitana de São Paulo  |  Subway Builder mod
 //  Registra a mancha urbana central da Grande São Paulo como cidade
 //  jogável, com basemap vetorial e demanda real da Pesquisa OD do Metrô-SP.
-//  Gerado pelo projeto rmsp-subway-builder (uv run rmsp ...).
+//  Gerado pelo projeto subway-builder-rmsp (uv run rmsp ...).
 //  Docs da API: https://www.subwaybuilder.com/docs/v1.0.0/api-reference/cities
 // =====================================================================
 (function () {

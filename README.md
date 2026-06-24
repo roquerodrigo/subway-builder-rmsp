@@ -10,7 +10,7 @@ de passageiros real** da Pesquisa Origem-Destino do Metrô-SP, com trajetos que
 seguem o viário (OSRM).
 
 ```
-rmsp-subway-builder/
+subway-builder-rmsp/
 ├── mod/                  # o mod (vai para <game>/mods/rmsp/)
 │   ├── manifest.json
 │   └── index.js

@@ -27,11 +27,13 @@ LAYERS: dict[str, tuple[list[str], str, list[str]]] = {
     "buildings": (["a/building"], "polygon", []),
     "water": (["a/natural=water", "a/landuse=reservoir", "a/water"], "polygon", []),
     "aero": (["nwr/aeroway=runway,taxiway,apron,aerodrome"], "polygon,linestring", []),
+    # green/recreation areas: parks, gardens, reserves, forests, protected areas
     "parks": (
         [
-            "a/leisure=park,nature_reserve,garden",
-            "a/landuse=forest,grass,recreation_ground,meadow,village_green",
-            "a/natural=wood",
+            "a/leisure=park,nature_reserve,garden,recreation_ground,dog_park",
+            "a/landuse=forest,grass,recreation_ground,meadow,village_green,greenfield",
+            "a/natural=wood,scrub,grassland,heath",
+            "a/boundary=national_park,protected_area",
         ],
         "polygon",
         [],

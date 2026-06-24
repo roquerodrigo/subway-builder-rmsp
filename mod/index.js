@@ -94,7 +94,7 @@
                 "A maior metrópole do hemisfério sul. Mancha urbana central da " +
                 "Grande São Paulo — capital, ABC, Guarulhos, Osasco e Diadema — " +
                 "com ~17 mi de habitantes e ~8 mi de empregos. Demanda baseada na " +
-                "Pesquisa Origem-Destino do Metrô.",
+                "Pesquisa Origem-Destino do Metrô-SP.",
             population: 17400000,
             initialViewState: { zoom: 11, latitude: -23.5505, longitude: -46.6333, bearing: 0 },
             minZoom: 9

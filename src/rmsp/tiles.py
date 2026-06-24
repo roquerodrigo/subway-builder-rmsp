@@ -92,16 +92,25 @@ def _bldg_height(props: dict) -> float | None:
 
 
 def _buildings_ndjson() -> None:
-    """buildings.ndjson with a `height` (m) property so the basemap's 3D extrusion
-    (`["get","height"]`) shows real heights instead of the flat 30 m fallback."""
+    """buildings.ndjson feeding two style layers: the basemap `buildings` extrusion reads
+    `["get","height"]` (m) and the foundations-view `foundations` layer reads
+    `["get","foundationDepth"]` (basement levels). Both have a fallback, so each property
+    is only emitted when it carries real information (height present / depth > 1)."""
+    from rmsp.layers import foundation_depth
 
     def feats():
         for ft in geojson.read_features(settings.sources_dir / "buildings.geojsonseq"):
             if not ft.get("geometry"):
                 continue
             props = ft.get("properties") or {}
+            out: dict = {}
             height = _bldg_height(props)
-            ft["properties"] = {"height": height} if height else {}
+            if height:
+                out["height"] = height
+            depth = foundation_depth(props)
+            if depth > 1:
+                out["foundationDepth"] = depth
+            ft["properties"] = out
             yield ft
 
     log.info("buildings: %d -> buildings.ndjson", _write_ndjson("buildings", feats()))

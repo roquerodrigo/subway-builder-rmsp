@@ -42,7 +42,6 @@ class Settings:
     bldg_area_min_m2: float = 30.0  # drop sheds/garages below this
     bldg_simplify_tol: float = 9.0e-6  # ~1 m in degrees (Douglas-Peucker)
     bldg_decimals: int = 5
-    bldg_max_floors: int = 80
     m_per_deg_lat: float = 110900.0  # at ~lat -23.5
     m_per_deg_lng: float = 101900.0
 

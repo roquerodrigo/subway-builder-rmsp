@@ -91,13 +91,20 @@ def build_roads() -> None:
 
 
 # ----------------------------------------------------------------------- buildings
-def _floors(props: dict) -> int:
-    try:
-        return max(
-            1, min(int(round(float(props.get("building:levels")))), settings.bldg_max_floors)
-        )
-    except (TypeError, ValueError):
-        return 1
+def foundation_depth(props: dict) -> int:
+    """Foundation depth in basement levels. The game reads buildings_index `f` (and the
+    foundations tile layer's `foundationDepth`) as how deep a building's foundation goes,
+    defaulting to 1 — it is NOT the above-ground floor count (that drives `height` in the
+    basemap tiles). Mirrors the community `depot` pipeline: max(1, levels:underground)."""
+    for key in ("building:levels:underground", "depth"):
+        v = props.get(key)
+        if v is None:
+            continue
+        try:
+            return max(1, round(float(str(v).split(";")[0].strip())))
+        except (TypeError, ValueError):
+            pass
+    return 1
 
 
 def _simplify_ring(ring: list[list[float]]) -> list[list[float]]:
@@ -135,7 +142,7 @@ def build_buildings() -> None:
             ]
             if not _ring_in_bbox(bx) or ring_area_m2(ring) < settings.bldg_area_min_m2:
                 continue
-            f = _floors(ft.get("properties") or {})
+            f = foundation_depth(ft.get("properties") or {})
             p = [[round(c[0], dec), round(c[1], dec)] for c in _simplify_ring(ring)]
             bx = [
                 min(c[0] for c in p),

@@ -78,8 +78,12 @@ Brasil → São Paulo (RMSP)**.
   `water/parks/buildings/airports`, os rótulos `city_labels/suburb_labels/
   neighborhood_labels` e as fundações `foundations/ocean_foundations`. Cada feature
   carrega só a propriedade que a camada lê: `parks→area`, `buildings→height` (m),
-  `water/ocean_foundations→depth_min`, labels→`name`. `index.js` liga
-  `oceanFoundations:false` — sem isso a camada `water` fica `visibility:none`.
+  `foundations→foundationDepth`, `water/ocean_foundations→depth_min`, labels→`name`.
+  `index.js` liga `oceanFoundations:false` — sem isso a camada `water` fica
+  `visibility:none`.
+- **Prédios**: a altura 3D vem da tile `buildings.height` (de `height`/`building:levels`);
+  o campo `f` do `buildings_index` é a **profundidade de fundação** (subsolos, default 1)
+  que o jogo lê como `foundationDepth` ao tunelar sob prédios — não os andares acima.
 - **API v1.0.0**: confirmado via `SubwayBuilderAPI` (`{"version":"1.0.0"}`),
   mesmo no app 1.3.0.
 

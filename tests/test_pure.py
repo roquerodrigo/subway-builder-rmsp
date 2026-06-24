@@ -20,6 +20,16 @@ def test_bldg_height_missing_or_bad():
     assert tiles._bldg_height({"building:levels": "n/a"}) is None
 
 
+def test_foundation_depth():
+    # the game reads buildings_index `f` / tiles `foundationDepth` as basement levels
+    assert layers.foundation_depth({}) == 1  # default
+    assert layers.foundation_depth({"building:levels": "40"}) == 1  # above-ground ≠ depth
+    assert layers.foundation_depth({"building:levels:underground": "3"}) == 3
+    assert layers.foundation_depth({"building:levels:underground": "2.5"}) == 2
+    assert layers.foundation_depth({"depth": "0"}) == 1  # max(1, …)
+    assert layers.foundation_depth({"building:levels:underground": "x"}) == 1
+
+
 def test_label_classes_partition():
     # the three label layers must not overlap and cover the extracted place classes
     seen = set()

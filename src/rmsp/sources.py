@@ -53,14 +53,11 @@ def _download(url: str, dest: Path) -> None:
 def download() -> None:
     settings.ensure_dirs()
     _download(settings.geofabrik_pbf_url, settings.pbf)
-    od_url = settings.od2023_zip_url if settings.od_year == 2023 else settings.od2017_zip_url
-    od_zip = settings.sources_dir / f"od{settings.od_year}.zip"
-    _download(od_url, od_zip)
-    od_dir = settings.sources_dir / f"od{settings.od_year}"
-    if not od_dir.exists():
-        log.info("extracting %s", od_zip.name)
-        with zipfile.ZipFile(od_zip) as z:
-            z.extractall(od_dir)
+    _download(settings.od_zip_url, settings.od_zip)
+    if not settings.od_dir.exists():
+        log.info("extracting %s", settings.od_zip.name)
+        with zipfile.ZipFile(settings.od_zip) as z:
+            z.extractall(settings.od_dir)
 
 
 def clip() -> None:

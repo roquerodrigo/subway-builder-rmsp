@@ -59,8 +59,7 @@ class Settings:
     airport_min_buffer: float = 6.0
     metric_crs: str = "EPSG:31983"  # SIRGAS 2000 / UTM 23S, metres for buffering
 
-    # --- demand (Pesquisa OD Metrô-SP) ---
-    od_year: int = 2023  # 2023 or 2017 (same field layout/coding)
+    # --- demand (Pesquisa OD 2023 do Metrô-SP) ---
     min_pop_size: int = 15  # drop OD pairs below this many expanded trips
     home_motive: int = 8
     work_motives: frozenset[int] = frozenset({1, 2, 3})  # indústria/comércio/serviços
@@ -81,10 +80,9 @@ class Settings:
     geofabrik_pbf_url: str = (
         "https://download.geofabrik.de/south-america/brazil/sudeste-latest.osm.pbf"
     )
-    od2023_zip_url: str = (
+    od_zip_url: str = (
         "https://transparencia.metrosp.com.br/sites/default/files/Site_190225_PesquisaOD2023.zip"
     )
-    od2017_zip_url: str = "https://transparencia.metrosp.com.br/sites/default/files/OD-2017.zip"
 
     # ---------- derived: bbox ----------
     @property
@@ -135,18 +133,20 @@ class Settings:
     def pbf_clip(self) -> Path:
         return self.sources_dir / "rmsp.osm.pbf"
 
+    @property
+    def od_dir(self) -> Path:
+        return self.sources_dir / "od2023"
+
+    @property
+    def od_zip(self) -> Path:
+        return self.sources_dir / "od2023.zip"
+
     def od_paths(self) -> tuple[Path, Path]:
-        """(zones shapefile base path, OD microdata .dbf) for the configured year."""
-        if self.od_year == 2023:
-            base = self.sources_dir / "od2023" / "Site_190225"
-            return (
-                base / "002_Site Metro Mapas_190225" / "Shape" / "Zonas_2023",
-                base / "Banco2023_divulgacao_190225.dbf",
-            )
-        base = self.sources_dir / "od2017" / "OD-2017"
+        """(zones shapefile base path, OD microdata .dbf) from the Pesquisa OD 2023."""
+        base = self.od_dir / "Site_190225"
         return (
-            base / "Mapas-OD2017" / "Shape-OD2017" / "Zonas_2017_region",
-            base / "Banco de Dados-OD2017" / "OD_2017_v1.dbf",
+            base / "002_Site Metro Mapas_190225" / "Shape" / "Zonas_2023",
+            base / "Banco2023_divulgacao_190225.dbf",
         )
 
     # ---------- derived: game install targets ----------

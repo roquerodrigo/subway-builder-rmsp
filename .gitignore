@@ -1,13 +1,12 @@
 # Generated / downloaded data (large, reproducible)
-pipeline/sources/
-pipeline/out/
-pipeline/tiles/
+data/
 
 # Python
 __pycache__/
 *.pyc
 .venv/
-venv/
+.pytest_cache/
+*.egg-info/
 
 # macOS
 .DS_Store

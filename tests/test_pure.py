@@ -1,6 +1,6 @@
 """Unit tests for the deterministic, dependency-free helpers."""
 
-from rmsp import layers, routing, tiles
+from rmsp import layers, publish, routing, tiles
 
 
 def test_bldg_height_from_height_tag():
@@ -28,6 +28,17 @@ def test_foundation_depth():
     assert layers.foundation_depth({"building:levels:underground": "2.5"}) == 2
     assert layers.foundation_depth({"depth": "0"}) == 1  # max(1, …)
     assert layers.foundation_depth({"building:levels:underground": "x"}) == 1
+
+
+def test_publish_config_required_fields():
+    # the registry rejects a map whose config.json lacks code/version or a numeric
+    # initialViewState (scripts/lib/integrity.ts + map-demand-stats extraction)
+    cfg = publish._config("2.3.4")
+    assert cfg["code"] == "RMSP"
+    assert cfg["version"] == "2.3.4"
+    ivs = cfg["initialViewState"]
+    assert set(ivs) == {"latitude", "longitude", "zoom", "bearing"}
+    assert all(isinstance(ivs[k], (int, float)) for k in ivs)
 
 
 def test_label_classes_partition():

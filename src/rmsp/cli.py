@@ -9,7 +9,7 @@ from pathlib import Path
 
 import typer
 
-from rmsp import demand, external, install, layers, routing, sources, tiles, validate
+from rmsp import demand, external, install, layers, publish, routing, sources, tiles, validate
 from rmsp.config import settings
 
 app = typer.Typer(add_completion=False, help="Generate & install the RMSP city for Subway Builder.")
@@ -97,6 +97,18 @@ def play() -> None:
         )
         time.sleep(2)
     external.run(["open", "-a", "Subway Builder"])
+
+
+@app.command()
+def bundle(
+    version: str = typer.Option("1.0.0", help="release version (config.json + Update JSON)"),
+    repo: str = typer.Option(
+        "", help="GitHub repo URL for the download link, e.g. https://github.com/<owner>/<repo>"
+    ),
+    changelog: str = typer.Option("Primeira versão.", help="changelog for this version"),
+) -> None:
+    """Package the Railyard map bundle (data/dist/<CODE>.zip + Update JSON)."""
+    publish.bundle(version=version, repo=repo or None, changelog=changelog)
 
 
 @app.command(name="all")

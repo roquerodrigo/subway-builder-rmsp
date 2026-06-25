@@ -64,10 +64,33 @@ class Settings:
     work_motives: frozenset[int] = frozenset({1, 2, 3})  # indústria/comércio/serviços
     edu_motives: frozenset[int] = frozenset({4})
 
+    # --- demand: dasymetric disaggregation (zone totals -> building sub-points) ---
+    # The official OD survey fixes per-zone residents/jobs and the zone->zone
+    # matrix; OSM buildings only decide *where inside a zone* that demand sits.
+    # residents_basis: "population" = real residents per zone (FE_PESS); jobs
+    #   scaled to Σresidents and placed by OD work-destination weight.
+    #   "commute" = the home->work/edu OD marginals (smaller; spatial spread only).
+    # "workers" (FE_PESS) | "commute" (FE_VIA); env override eases A/B comparison
+    residents_basis: str = field(default_factory=lambda: os.environ.get("RMSP_BASIS", "workers"))
+    subcell_size: float = 0.0027  # ~300 m grid inside each zone for sub-points
+    subpoint_min_weight: float = 1.0  # drop near-empty cells
+    dest_cap: int = 8  # top destination zones kept per origin (bounds pop count)
+    bldg_levels_cap: int = 60  # clamp building:levels outliers (floor-area proxy)
+    mixed_use_split: tuple[float, float] = (0.5, 0.5)  # unknown buildings: (res, job)
+
     # --- routing (OSRM) ---
     osrm_port: int = 5050  # 5000 is taken by macOS Control Center (AirPlay)
     route_workers: int = 8
     path_simplify_eps: float = 0.002  # ~220 m, keeps road shape, light file
+
+    # --- external tools via Docker (Linux: no Homebrew) ---
+    # osmium/tippecanoe/osrm/pmtiles run in containers (see external.py).
+    # PROJECT_ROOT is bind-mounted so absolute data/ paths resolve in-container.
+    use_docker: bool = True
+    tools_image: str = "sbrmsp-tools:latest"  # osmium-tool + tippecanoe + tile-join
+    osrm_image: str = "ghcr.io/project-osrm/osrm-backend:latest"
+    pmtiles_image: str = "protomaps/go-pmtiles:latest"
+    osrm_profile: str = "/opt/car.lua"  # car.lua bundled in the OSRM image
 
     # --- tiles ---
     tile_zoom_min: int = 8

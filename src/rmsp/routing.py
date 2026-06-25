@@ -24,6 +24,10 @@ def _osrm_base() -> Path:
 
 
 def _car_profile() -> Path:
+    # On Linux the OSRM tools run in the official image, which ships the car
+    # profile at /opt/car.lua; off-Docker, fall back to a Homebrew install.
+    if settings.use_docker:
+        return Path(settings.osrm_profile)
     prefix = Path(external.capture(["brew", "--prefix", "osrm-backend"]))
     return prefix / "share" / "osrm-backend" / "profiles" / "car.lua"
 

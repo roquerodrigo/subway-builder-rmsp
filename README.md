@@ -70,10 +70,23 @@ Brasil → São Paulo (RMSP)**.
 
 ## Notas técnicas
 
-- **Demanda OD**: `points` = zonas OD (centroides, moradores/empregos reais);
-  `pops` = pares origem→destino (casa↔trabalho/educação) expandidos. Cada pop é
-  listado nos `popIds` das **duas** zonas (senão a aba *Workers* fica sem
-  horários). `drivingPath` segue as ruas via OSRM, simplificado por Douglas-Peucker.
+- **Demanda OD (desagregação dasimétrica)**: a Pesquisa OD fixa os totais por
+  zona e a matriz zona→zona; os **prédios do OSM** decidem *onde dentro da zona*
+  a demanda fica. Cada prédio recebe um peso residencial e um de emprego (área de
+  pé × andares, dividido pelas tags `building`/`amenity`/`shop`/`office`); os
+  prédios são agrupados numa grade fina (~300 m) e cada célula vira um `point`.
+  `pops` ligam sub-ponto residencial → sub-ponto de emprego. `residents`/`jobs`
+  são **derivados dos pops**, garantindo `Σ residents == Σ jobs == Σ pop.size`
+  (invariante do jogo/Railyard). Cada pop entra nos `popIds` das **duas** pontas
+  (senão a aba *Workers* fica sem horários). `drivingPath` segue as ruas via OSRM.
+  Duas bases (`settings.residents_basis`, env `RMSP_BASIS`): **`workers`**
+  (FE_PESS por pessoa, casa `ZONA` → trabalho `ZONATRA1`; ~10,4 mi, o padrão) e
+  `commute` (FE_VIA casa→trabalho/educação; ~14,3 mi). Resultado: **~17,5 mil
+  `points`** (antes ~500 centroides de zona).
+- **Runtime Linux/Docker**: as ferramentas externas (osmium, tippecanoe, osrm-\*,
+  pmtiles) rodam em containers — ver `src/rmsp/external.py` e `docker/tools.Dockerfile`.
+  `use_docker=True` (default) monta a raiz do projeto no container; em macOS com
+  Homebrew, `use_docker=False` usa os binários nativos.
 - **Basemap**: PMTiles com as camadas que o estilo do jogo renderiza —
   `water/parks/buildings/airports`, os rótulos `city_labels/suburb_labels/
   neighborhood_labels` e as fundações `foundations/ocean_foundations`. Cada feature

@@ -13,3 +13,6 @@ __pycache__/
 
 # JetBrains IDE
 .idea/
+
+# Docker build/pull scratch logs
+docker/_*

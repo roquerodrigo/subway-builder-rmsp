@@ -1,12 +1,17 @@
 """Build demand_data.json(.gz) from the real Pesquisa Origem-Destino (Metrô-SP).
 
-pops:   home-based work/education trips aggregated by (origin, dest) zone, listed
-        on BOTH endpoints' popIds (else the Workers tab has no arrival/departure).
-        drivingPath starts as a straight line; routing.py replaces it with roads.
-points: one per OD zone referenced by a pop. residents/jobs are the commute-matrix
-        marginals (Σ pop.size by home / by workplace), NOT the total population —
-        the game requires Σ residents == Σ jobs == Σ pop.size (verified in shipped
-        cities and enforced by the Railyard registry).
+The official OD survey fixes the per-zone totals and the zone→zone matrix; OSM
+buildings (via :mod:`rmsp.subpoints`) only decide *where inside a zone* demand
+sits. Each commuter relationship becomes a pop from a residential sub-point to a
+job sub-point; ``points`` are those sub-points. residents/jobs are derived from
+the pops, so ``Σ residents == Σ jobs == Σ pop.size`` holds exactly (the game /
+Railyard invariant).
+
+Two bases (``settings.residents_basis``), both respecting the official survey:
+  workers  – FE_PESS per person, home zone (ZONA) → workplace zone (ZONATRA1);
+             totals = the working population (~9M).
+  commute  – FE_VIA home→work/education trips by (ZONA_O, ZONA_D); totals = the
+             expanded commute-trip volume (~7.7M).
 """
 
 from __future__ import annotations
@@ -14,9 +19,8 @@ from __future__ import annotations
 import collections
 import logging
 import math
-from pathlib import Path
 
-from rmsp import geojson
+from rmsp import geojson, subpoints
 from rmsp.config import settings
 
 log = logging.getLogger(__name__)
@@ -49,45 +53,48 @@ def _speed_kmh(km: float) -> float:
     return 48.0
 
 
-def _zone_centroids(zones_shp: Path) -> dict[int, tuple[float, float, str]]:
-    """zone number -> (lng, lat, name) for zones whose centroid is in the bbox."""
-    import shapefile
-    from pyproj import CRS, Transformer
-    from shapely.geometry import shape as shp_shape
-
-    to_wgs = Transformer.from_crs(
-        CRS.from_wkt(zones_shp.with_suffix(".prj").read_text()), "EPSG:4326", always_xy=True
-    ).transform
-    sf = shapefile.Reader(str(zones_shp), encoding="latin-1")
-    flds = [f[0] for f in sf.fields[1:]]
-    zones: dict[int, tuple[float, float, str]] = {}
-    for sr in sf.iterShapeRecords():
-        rec = dict(zip(flds, sr.record, strict=False))
-        try:
-            c = shp_shape(sr.shape.__geo_interface__).centroid
-            lng, lat = to_wgs(c.x, c.y)
-        except Exception:
-            continue
-        if settings.in_bbox(lng, lat):
-            zones[int(rec["NumeroZona"])] = (
-                round(lng, 5),
-                round(lat, 5),
-                rec.get("NomeZona") or str(rec["NumeroZona"]),
-            )
-    return zones
+def _largest_remainder(weights: list[float], total: int) -> list[int]:
+    """Apportion ``total`` integer units across ``weights`` (sum preserved)."""
+    s = sum(weights)
+    if s <= 0 or total <= 0:
+        return [0] * len(weights)
+    raw = [w / s * total for w in weights]
+    out = [int(x) for x in raw]
+    rem = total - sum(out)
+    for i in sorted(range(len(weights)), key=lambda i: raw[i] - out[i], reverse=True)[:rem]:
+        out[i] += 1
+    return out
 
 
-def build_demand() -> None:
+# ---------------------------------------------------------------- OD matrices
+def _workers_od(zones: set[int]) -> dict[tuple[int, int], float]:
+    """FE_PESS per person: home (ZONA) → workplace (ZONATRA1). Deduped by person."""
     from dbfread import DBF
 
-    zones_shp, od_dbf = settings.od_paths()
-    zones = _zone_centroids(zones_shp)
-    log.info("zones in bbox: %d", len(zones))
-
-    od: dict[tuple[int, int], list[float]] = collections.defaultdict(lambda: [0.0, 0.0, 0.0])
-    nrows = 0
+    _, od_dbf = settings.od_paths()
+    flows: dict[tuple[int, int], float] = collections.defaultdict(float)
+    seen: set[tuple] = set()
     for r in DBF(str(od_dbf), encoding="latin-1", raw=False):
-        nrows += 1
+        key = (r.get("ID_DOM"), r.get("ID_FAM"), r.get("ID_PESS"))
+        if key in seen:
+            continue
+        seen.add(key)
+        fp = r.get("FE_PESS") or 0.0
+        if not fp:
+            continue
+        hz, wz = _as_int(r.get("ZONA")), _as_int(r.get("ZONATRA1"))
+        if hz in zones and wz in zones:  # intra-zone (hz==wz) is real local demand
+            flows[(hz, wz)] += fp
+    return flows
+
+
+def _commute_od(zones: set[int]) -> dict[tuple[int, int], float]:
+    """FE_VIA home→work/education trips aggregated by (origin, dest) zone."""
+    from dbfread import DBF
+
+    _, od_dbf = settings.od_paths()
+    flows: dict[tuple[int, int], float] = collections.defaultdict(float)
+    for r in DBF(str(od_dbf), encoding="latin-1", raw=False):
         fv = r.get("FE_VIA") or 0.0
         if not fv:
             continue
@@ -96,60 +103,117 @@ def build_demand() -> None:
         if _as_int(r.get("MOTIVO_D")) not in settings.job_motives:
             continue
         o, d = _as_int(r.get("ZONA_O")), _as_int(r.get("ZONA_D"))
-        if o is None or d is None or o == d or o not in zones or d not in zones:
-            continue
-        e = od[(o, d)]
-        e[0] += fv
-        e[1] += (r.get("DISTANCIA") or 0.0) * fv
-        e[2] += (r.get("DURACAO") or 0.0) * fv
+        if o in zones and d in zones:  # intra-zone (o==d) is real local demand
+            flows[(o, d)] += fv
+    return flows
 
-    log.info("rows=%d od-pairs=%d", nrows, len(od))
 
-    # Build pops first; residents/jobs are the surviving pops' marginals so that
-    # Σ residents == Σ jobs == Σ pop.size (the game/registry invariant).
-    residents: dict[int, int] = collections.defaultdict(int)
-    jobs: dict[int, int] = collections.defaultdict(int)
-    pops = []
-    total = 0
-    for seq, ((o, d), (size_f, distw, durw)) in enumerate(sorted(od.items()), 1):
-        size = round(size_f)
-        if size < settings.min_pop_size:
+def _roulette(subs: list[subpoints.SubPoint], length: int = 64) -> list[int]:
+    """Indices into ``subs`` repeated ∝ job_w, so round-robin picks spread jobs."""
+    counts = _largest_remainder([s.job_w for s in subs], max(length, len(subs)))
+    seq = [i for i, c in enumerate(counts) for _ in range(c)]
+    return seq or list(range(len(subs)))
+
+
+def _drive(o: subpoints.SubPoint, d: subpoints.SubPoint) -> tuple[int, int]:
+    dist_m = max(300.0, _haversine_m(o.lng, o.lat, d.lng, d.lat) * 1.42)
+    secs = round(dist_m / (_speed_kmh(dist_m / 1000) * 1000 / 3600))
+    return secs, round(dist_m)
+
+
+def build_demand() -> None:
+    zones_shp, _ = settings.od_paths()
+    zone_of, centroids = subpoints.load_zone_index(zones_shp)
+    zones = set(centroids)
+    log.info("zones: %d", len(zones))
+
+    subs = subpoints.build_subpoints(zone_of)
+    flows = _workers_od(zones) if settings.residents_basis == "workers" else _commute_od(zones)
+    log.info(
+        "basis=%s od-pairs=%d Σflow=%.0f",
+        settings.residents_basis,
+        len(flows),
+        sum(flows.values()),
+    )
+
+    out_by_o: dict[int, list[tuple[int, float]]] = collections.defaultdict(list)
+    for (o, d), v in flows.items():
+        out_by_o[o].append((d, v))
+    roulette: dict[int, list[int]] = {}
+    rcount: dict[int, int] = collections.defaultdict(int)
+
+    def _ensure_sub(z: int) -> list[subpoints.SubPoint]:
+        """Zones with no usable buildings fall back to a single centroid sub-point."""
+        if subs.get(z):
+            return subs[z]
+        lng, lat, _ = centroids[z]
+        subs[z] = [subpoints.SubPoint(id=f"z{z}c0", lng=lng, lat=lat, res_w=1.0, job_w=1.0)]
+        return subs[z]
+
+    pops: list[dict] = []
+    residents: dict[str, int] = collections.defaultdict(int)
+    jobs: dict[str, int] = collections.defaultdict(int)
+    point_by_id: dict[str, subpoints.SubPoint] = {}
+    seq = 0
+
+    for o, dests in out_by_o.items():
+        all_o = _ensure_sub(o)
+        osubs = [s for s in all_o if s.res_w > 0] or all_o
+        res_zone = sum(v for _, v in dests)
+        if res_zone <= 0:
             continue
-        olng, olat, _ = zones[o]
-        dlng, dlat, _ = zones[d]
-        dist_m = distw / size_f if size_f else 0.0
-        if dist_m < 100:
-            dist_m = max(300.0, _haversine_m(olng, olat, dlng, dlat) * 1.42)
-        dur_min = durw / size_f if size_f else 0.0
-        secs = (
-            round(dur_min * 60)
-            if dur_min > 0
-            else round(dist_m / (_speed_kmh(dist_m / 1000) * 1000 / 3600))
-        )
-        pops.append(
-            {
-                "id": f"p{seq:05d}",
-                "size": size,
-                "residenceId": f"z{o}",
-                "jobId": f"z{d}",
-                "drivingSeconds": secs,
-                "drivingDistance": round(dist_m),
-                "drivingPath": [[olng, olat], [dlng, dlat]],
-            }
-        )
-        residents[o] += size
-        jobs[d] += size
-        total += size
+        dests.sort(key=lambda x: x[1], reverse=True)
+        kept = dests[: settings.dest_cap]
+        kept_sum = sum(v for _, v in kept) or 1.0
+        ow_sum = sum(s.res_w for s in osubs) or 1.0
+
+        alloc: list[tuple[subpoints.SubPoint, subpoints.SubPoint, float]] = []
+        for os in osubs:
+            r_os = res_zone * (os.res_w / ow_sum)
+            for d, fv in kept:
+                dsubs = _ensure_sub(d)
+                if d not in roulette:
+                    roulette[d] = _roulette(dsubs)
+                rseq = roulette[d]
+                ds = dsubs[rseq[rcount[d] % len(rseq)]]
+                rcount[d] += 1
+                if ds.id == os.id and len(dsubs) > 1:  # avoid a zero-length self-commute
+                    ds = dsubs[rseq[rcount[d] % len(rseq)]]
+                    rcount[d] += 1
+                alloc.append((os, ds, r_os * fv / kept_sum))
+
+        sizes = _largest_remainder([a[2] for a in alloc], round(res_zone))
+        for (os, ds, _), size in zip(alloc, sizes, strict=True):
+            if size <= 0:
+                continue
+            secs, dist = _drive(os, ds)
+            seq += 1
+            pid = f"p{seq:06d}"
+            pops.append(
+                {
+                    "id": pid,
+                    "size": size,
+                    "residenceId": os.id,
+                    "jobId": ds.id,
+                    "drivingSeconds": secs,
+                    "drivingDistance": dist,
+                    "drivingPath": [[os.lng, os.lat], [ds.lng, ds.lat]],
+                }
+            )
+            residents[os.id] += size
+            jobs[ds.id] += size
+            point_by_id.setdefault(os.id, os)
+            point_by_id.setdefault(ds.id, ds)
 
     points = [
         {
-            "id": f"z{z}",
-            "location": [zones[z][0], zones[z][1]],
-            "jobs": jobs.get(z, 0),
-            "residents": residents.get(z, 0),
+            "id": pid,
+            "location": [sp.lng, sp.lat],
+            "jobs": jobs.get(pid, 0),
+            "residents": residents.get(pid, 0),
             "popIds": [],
         }
-        for z in sorted(set(residents) | set(jobs))
+        for pid, sp in point_by_id.items()
     ]
     by_id = {p["id"]: p for p in points}
     for pop in pops:
@@ -166,7 +230,7 @@ def build_demand() -> None:
         len(pops),
         sum(residents.values()),
         sum(jobs.values()),
-        total,
+        sum(p["size"] for p in pops),
         out.name,
         geojson.mb(out),
     )

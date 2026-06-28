@@ -1,0 +1,18 @@
+# Generated / downloaded data (large, reproducible)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# JetBrains IDE
+.idea/
+
+# AI / editor tooling
+.ai/

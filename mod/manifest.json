@@ -1,0 +1,10 @@
+{
+    "id": "br.rodrigo.rmsp",
+    "name": "São Paulo (RMSP)",
+    "description": "Região Metropolitana de São Paulo inteira (capital, ABC, Guarulhos, Osasco/Barueri, Mogi e periferia). Ruas, prédios, água e demanda real da Pesquisa Origem-Destino do Metrô-SP, desagregada sobre endereços do CNEFE/Censo 2022 (IBGE).",
+    "version": "2.0.0",
+    "author": {
+        "name": "Rodrigo Roque"
+    },
+    "main": "index.js"
+}

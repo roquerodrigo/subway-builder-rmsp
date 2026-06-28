@@ -1,0 +1,34 @@
+[project]
+name = "subway-builder-rmsp"
+version = "0.1.0"
+description = "RMSP (São Paulo) custom-city map generator for Subway Builder"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer",       # CLI
+    "pyshp",       # shapefile reader (OD zones)
+    "dbfread",     # DBF reader (OD survey microdata)
+    "pyproj",      # reproject Córrego Alegre UTM 23S -> WGS84
+    "shapely",     # polygon ops / simplification / buffering
+    "certifi",     # CA bundle for the IBGE FTP-over-HTTPS download (incomplete chain)
+]
+
+[project.scripts]
+rmsp = "rmsp.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rmsp"]
+
+[dependency-groups]
+dev = ["ruff", "pytest"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,21 @@
+# Generated / downloaded data (large, reproducible)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# JetBrains IDE
+.idea/
+
+# Docker build/pull scratch logs
+docker/_*
+
+# AI / editor tooling
+.ai/

@@ -1,0 +1,57 @@
+[project]
+name = "subway-builder-rmsp"
+version = "0.1.0"
+description = "RMSP (São Paulo) custom-city map generator for Subway Builder"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer",       # CLI
+    "certifi",     # CA bundle for the Geofabrik PBF download
+    "python-dotenv",  # load .env at project root into the environment (config knobs)
+    # --- depot: official SBM map-making library, generates all non-demand game files ---
+    # (roads/buildings incl. buildings_index.bin/airports/ocean_depth/pmtiles). GPL v3.
+    "depot @ git+https://github.com/Subway-Builder-Modded/depot.git@1.2.1",
+    # depot's pyproject only declares `requests`, but its code imports these at runtime:
+    "duckdb",            # Overture buildings query (S3)
+    "geopandas",         # vector ops
+    "pandas",
+    "numpy",
+    "scipy",             # bathymetry interpolation
+    "xarray",            # GEBCO bathymetry grids
+    "netcdf4",           # GEBCO NetCDF reader
+    "matplotlib",
+    "mapbox-vector-tile",
+    "mercantile",
+    "httpx[http2]",      # depot queries the Overture release tag over HTTP/2 (needs h2)
+    "osmnx",
+    "requests",
+    "tqdm",              # depot 1.2.x adds progress bars to maps.py (imported at module load)
+    # --- depot.demand (v1.2.0+): the demand model we now build on. Imports these at module load. ---
+    "scikit-learn",      # AgglomerativeClustering in DemandData.agglomerate_pops
+    "networkx",          # imported by depot.demand (also OSMnx routing, unused here)
+    "unidecode",         # DemandData.create_description slugifies the map id
+    "inflect",           # DemandData._load_schema pluralizes special-demand labels
+]
+
+[project.scripts]
+rmsp = "rmsp.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true  # permit the depot git+https dependency
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rmsp"]
+
+[dependency-groups]
+dev = ["ruff", "pytest"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

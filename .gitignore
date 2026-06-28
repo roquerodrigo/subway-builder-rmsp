@@ -1,0 +1,30 @@
+# Generated / downloaded data (large, reproducible)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# JetBrains IDE
+.idea/
+
+# AI / editor tooling
+.ai/
+
+# Debug-session logs (rmsp debug)
+/logs/
+
+# Personal notes (not for the public repo)
+/railyard-submission.md
+
+# Local config overrides (.env.example is tracked as the documented template)
+/.env
+
+# Release artifacts (rmsp bundle) — regeneráveis, grandes
+/dist/

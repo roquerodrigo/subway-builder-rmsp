@@ -141,12 +141,6 @@ def generate_base(verbose: bool = False) -> None:
     ``runways_taxiways.geojson.gz``, ``ocean_depth_index.json.gz``; and
     ``data/tiles/<CODE>.pmtiles``.
     """
-    from rmsp import depot_patch
-
-    # depot's tile-fix step stalls ~1h on RMSP's water geometry; ensure the venv patch is
-    # applied (it's lost on `uv sync`). Do it before the spawned tile workers re-import depot.
-    depot_patch.ensure_patched()
-
     g = _mapgen(verbose)
     g.extract_base_data()
     # Pre-filter the Overture buildings before process_buildings' mapshaper step (which OOMs

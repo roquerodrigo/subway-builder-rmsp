@@ -103,19 +103,29 @@ def _gzip_to(src: Path, dst: Path) -> None:
         shutil.copyfileobj(f_in, f_out)
 
 
+def _collect_gzipped(city_dir: Path, build_dir: Path, name: str) -> None:
+    """Take depot's own ``<name>.gz`` when it wrote one, else gzip the plain file.
+
+    depot 1.2.4 gzips the buildings index itself; roads and runways still come out plain.
+    """
+    already_gzipped = city_dir / f"{name}.gz"
+    if already_gzipped.exists():
+        shutil.copy2(already_gzipped, build_dir / already_gzipped.name)
+    else:
+        _gzip_to(city_dir / name, build_dir / f"{name}.gz")
+
+
 def _collect() -> None:
     """Move depot's ``data/<CODE>/`` outputs into build_dir/tiles_dir (gzipping plain ones)."""
     city_dir = settings.data_dir / settings.code
-    b = settings.build_dir
-    # depot writes these plain; the game/registry want them gzipped.
-    _gzip_to(city_dir / "buildings_index.json", b / "buildings_index.json.gz")
-    _gzip_to(city_dir / "roads.geojson", b / "roads.geojson.gz")
-    _gzip_to(city_dir / "runways_taxiways.geojson", b / "runways_taxiways.geojson.gz")
-    # depot already gzips these; copy verbatim.
+    build_dir = settings.build_dir
+    for name in ("buildings_index.json", "roads.geojson", "runways_taxiways.geojson"):
+        _collect_gzipped(city_dir, build_dir, name)
+    # depot only ever writes these gzipped.
     for name in ("buildings_index.bin.gz", "ocean_depth_index.json.gz"):
         src = city_dir / name
         if src.exists():
-            shutil.copy2(src, b / name)
+            shutil.copy2(src, build_dir / name)
         else:
             log.warning("depot did not produce %s — skipping", name)
     pmtiles = f"{settings.code}.pmtiles"

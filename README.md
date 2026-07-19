@@ -54,9 +54,11 @@ uv sync                       # cria o venv e instala o pacote + depot + deps pe
 
 O passo "Fixing MBTiles" do depot **trava ~1 h** na hidrografia densa do RMSP (represas
 Billings/Guarapiranga, rios Tietê/Pinheiros): um loop `O(parts × features)` de associação
-de IDs de água e o `difference` de parques×água contra a geometria gigante das represas.
-`src/rmsp/depot_patch.py` remove esses dois gargalos (trade-off: parques podem sobrepor a
-água levemente em alguns zooms).
+de IDs de água e o `difference` de parques e áreas comerciais × água contra a geometria
+gigante das represas. `src/rmsp/depot_patch.py` remove esses dois gargalos (trade-off:
+parques e áreas comerciais podem sobrepor a água levemente em alguns zooms). Os recortes
+parque×aeródromo e parque×comercial que o depot 1.2.3 introduziu são mantidos — essas
+máscaras são pequenas e melhoram o resultado.
 
 O patch vive na venv (`site-packages/depot/maps.py`) e **some a cada `uv sync`/reinstalação
 do depot**. O `rmsp generate` **reaplica automaticamente** antes de gerar os tiles, mas dá

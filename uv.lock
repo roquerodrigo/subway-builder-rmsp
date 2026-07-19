@@ -296,18 +296,9 @@ wheels = [
 ]
 
 [[package]]
-name = "dbfread"
-version = "2.0.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ad/ae/a5891681f5012724d062a4ca63ec2ff539c73d5804ba594e7e0e72099d3f/dbfread-2.0.7.tar.gz", hash = "sha256:07c8a9af06ffad3f6f03e8fe91ad7d2733e31a26d2b72c4dd4cfbae07ee3b73d", size = 33212, upload-time = "2016-11-25T11:25:01.408Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/94/51349e43503e30ed7b4ecfe68a8809cdb58f722c0feb79d18b1f1e36fe74/dbfread-2.0.7-py2.py3-none-any.whl", hash = "sha256:f604def58c59694fa0160d7be5d0b8d594467278d2bb6a47d46daf7162c84cec", size = 20018, upload-time = "2016-11-25T11:27:36.001Z" },
-]
-
-[[package]]
 name = "depot"
-version = "1.2.1"
-source = { git = "https://github.com/Subway-Builder-Modded/depot.git?rev=1.2.1#d865fc360bb2d8fa646c38de53061fdf9dd59371" }
+version = "1.2.4"
+source = { git = "https://github.com/Subway-Builder-Modded/depot.git?rev=1.2.4#d7f76748cec8b351f9565ebbb12c49c5ae24abf4" }
 dependencies = [
     { name = "requests" },
 ]
@@ -1293,15 +1284,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyshp"
-version = "3.1.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8e/12/9e87b05e1d5893a632b13aaa895ce0f4418e5ced48fc488ccb37c2648c29/pyshp-3.1.1.tar.gz", hash = "sha256:8f3efb4d313ada16474a6080465cba4f4fada32267e1e09e7242a25c40dcbda7", size = 2215479, upload-time = "2026-06-24T16:53:41.253Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/dd/d7d5fd6863392ed85dbb298e8d2d4aa847728043298f4d6a95e0177d9b94/pyshp-3.1.1-py3-none-any.whl", hash = "sha256:0664154405d85ca18a634da3dce0cea2d189375b96bde6198b3ef5b919bdcbd4", size = 68857, upload-time = "2026-06-24T16:53:40.216Z" },
-]
-
-[[package]]
 name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1660,7 +1642,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
-    { name = "dbfread" },
     { name = "depot" },
     { name = "duckdb" },
     { name = "geopandas" },
@@ -1675,14 +1656,11 @@ dependencies = [
     { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "osmnx" },
     { name = "pandas" },
-    { name = "pyproj" },
-    { name = "pyshp" },
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "scikit-learn" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "shapely" },
     { name = "tqdm" },
     { name = "typer" },
     { name = "unidecode" },
@@ -1698,8 +1676,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "certifi" },
-    { name = "dbfread" },
-    { name = "depot", git = "https://github.com/Subway-Builder-Modded/depot.git?rev=1.2.1" },
+    { name = "depot", git = "https://github.com/Subway-Builder-Modded/depot.git?rev=1.2.4" },
     { name = "duckdb" },
     { name = "geopandas" },
     { name = "httpx", extras = ["http2"] },
@@ -1712,13 +1689,10 @@ requires-dist = [
     { name = "numpy" },
     { name = "osmnx" },
     { name = "pandas" },
-    { name = "pyproj" },
-    { name = "pyshp" },
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "scikit-learn" },
     { name = "scipy" },
-    { name = "shapely" },
     { name = "tqdm" },
     { name = "typer" },
     { name = "unidecode" },

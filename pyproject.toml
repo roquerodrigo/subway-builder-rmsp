@@ -10,7 +10,7 @@ dependencies = [
     "python-dotenv",  # load .env at project root into the environment (config knobs)
     # --- depot: official SBM map-making library, generates all non-demand game files ---
     # (roads/buildings incl. buildings_index.bin/airports/ocean_depth/pmtiles). GPL v3.
-    "depot @ git+https://github.com/Subway-Builder-Modded/depot.git@1.2.1",
+    "depot @ git+https://github.com/Subway-Builder-Modded/depot.git@1.2.4",
     # depot's pyproject only declares `requests`, but its code imports these at runtime:
     "duckdb",            # Overture buildings query (S3)
     "geopandas",         # vector ops

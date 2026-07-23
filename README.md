@@ -70,8 +70,8 @@ Ou passo a passo:
 uv run rmsp sources     # baixa o PBF (Geofabrik) e recorta no bbox
 uv run rmsp generate    # depot: roads/buildings(json+bin)/água/aero/PMTiles -> data/build + data/tiles
 uv run rmsp demand      # baixa o demand_data.json da release do subway-builder-rmsp-demand-data
-uv run rmsp specials    # injeta os POIs de demanda especial (aeroporto/parque/estádio…)
-uv run rmsp routes      # trajetos viários reais dos commuters (OSRM)
+uv run rmsp specials    # opt-in (RMSP_SPECIAL_DEMAND=1): injeta POIs de demanda especial
+uv run rmsp routes      # OSRM: rota, descarta trajetos de carro < 2 km, geometria reta
 uv run rmsp validate    # confere os .gz contra o schema das cidades nativas
 uv run rmsp bundle      # empacota dist/RMSP.zip (+ Update JSON) p/ importar no Railyard
 ```
@@ -101,14 +101,14 @@ O download do PBF é idempotente (pula se o arquivo já existe).
 
 ```
 OSM PBF + Overture ──depot(generate)──> roads/buildings(json+bin)/água/aero + PMTiles
-release do demand-data ──demand(fetch)──> demand_data.json ──specials──> +POIs ──routes(OSRM)──> drivingPath
+release do demand-data ──demand(fetch)──> demand_data.json ──[specials]──> routes(OSRM: rota + filtro + geometria reta)
 ```
 
 Os arquivos não-demanda (roads, buildings `json`+`bin`, água, aeroportos, PMTiles) são
 gerados pelo `depot`; prédios vêm do **Overture Maps**. A **demanda** é gerada no projeto
 [**subway-builder-rmsp-demand-data**](https://github.com/roquerodrigo/subway-builder-rmsp-demand-data)
-e publicada como release — aqui o RMSP só a **baixa**, adiciona **demanda especial** e a
-**roteia** (OSRM).
+e publicada como release — aqui o RMSP só a **baixa** e a **roteia** (OSRM); a demanda
+especial (`specials`) é **opt-in**.
 
 ### Demanda
 
@@ -116,12 +116,17 @@ A demanda de commuters (Pesquisa OD 2023 + CNEFE/Censo + GeoSampa) é modelada n
 [subway-builder-rmsp-demand-data](https://github.com/roquerodrigo/subway-builder-rmsp-demand-data)
 e baixada pronta da release (`demand`). Sobre ela o RMSP:
 
-- **`specials`** — injeta **pontos de demanda especial** (aeroportos, universidades,
-  shoppings, parques, estádios, hospitais… — ver `rmsp/specials.py`) via `depot.add_points`:
-  cada POI vira um ponto de id prefixado pelo código do tipo (`AIR_GRU`, `PRK_IBIRA`…),
-  ligado à população por gravidade. O `config.json` declara os `specialDemandTypes` presentes.
-- **`routes`** — substitui a reta entre origem/destino por um **trajeto viário real** (OSRM,
-  em paralelo) simplificado por Douglas-Peucker. `RMSP_ROUTE_STRAIGHT_LINE=1` pula o OSRM.
+- **`specials`** (opt-in, `RMSP_SPECIAL_DEMAND=1`) — injeta **pontos de demanda especial**
+  (aeroportos, universidades, shoppings, parques, estádios, hospitais… — ver `rmsp/specials.py`)
+  via `depot.add_points`: cada POI vira um ponto de id prefixado pelo código do tipo
+  (`AIR_GRU`, `PRK_IBIRA`…), ligado à população por gravidade. Desligado por padrão porque
+  a demanda-data já traz destinos nomeados do OSM. O `config.json` declara os
+  `specialDemandTypes` presentes.
+- **`routes`** — roteia cada commute na malha viária (OSRM, em paralelo) para obter
+  `drivingSeconds`/`drivingDistance` reais, **descarta os trajetos de carro < 2 km**
+  (`RMSP_MIN_DRIVING_DISTANCE_M`; reindexa os points) e reduz o `drivingPath` a uma **reta
+  origem→destino** (`RMSP_STRAIGHT_PATH_GEOMETRY`, como o jogo o desenha). Ajuste os knobs
+  para manter a linha viária (Douglas-Peucker) ou pular o OSRM (`RMSP_ROUTE_STRAIGHT_LINE=1`).
 
 Os `residents`/`jobs` por `point` são derivados dos pops (invariante `Σ residents ==
 Σ jobs == Σ pop.size`).
@@ -131,7 +136,9 @@ Os `residents`/`jobs` por `point` são derivados dos pops (invariante `Σ reside
 | Var | Default | Efeito |
 |---|---|---|
 | `RMSP_DEMAND_URL` | release v1.0.0 | asset `demand_data.json.gz` baixado pelo `demand` |
-| `RMSP_SPECIAL_DEMAND` | `1` | injeta os POIs de demanda especial no pipeline `all` |
+| `RMSP_SPECIAL_DEMAND` | `0` | injeta os POIs de demanda especial no pipeline `all` (opt-in) |
+| `RMSP_MIN_DRIVING_DISTANCE_M` | `2000` | descarta commutes de carro abaixo disso (0 desliga) |
+| `RMSP_STRAIGHT_PATH_GEOMETRY` | `1` | `drivingPath` = reta origem→destino (0 = Douglas-Peucker) |
 | `RMSP_ROUTE_STRAIGHT_LINE` | `0` | liga os pontos por reta (pula o OSRM) |
 | `RMSP_MAXZOOM` | `15` | zoom máximo das tiles (detalhe) |
 | `RMSP_BUILD_WORKERS` | `0` (auto) | nº de processos nas passadas por-feature do build |
@@ -143,9 +150,11 @@ São Paulo**.
 
 - **Demanda**: gerada no projeto
   [subway-builder-rmsp-demand-data](https://github.com/roquerodrigo/subway-builder-rmsp-demand-data)
-  e baixada pronta da release (ver **Pipeline de dados → Demanda**). O RMSP só adiciona a
-  **demanda especial** (`specials`) e o **roteamento** (`routes`). `residents`/`jobs` por
-  `point` são **derivados dos pops**, garantindo `Σ residents == Σ jobs == Σ pop.size`.
+  e baixada pronta da release (ver **Pipeline de dados → Demanda**). O RMSP faz o
+  **roteamento** (`routes`: rota, descarte de trajetos curtos e geometria reta) e,
+  opcionalmente, a **demanda especial** (`specials`). `residents`/`jobs` por `point` são
+  **derivados dos pops** e reindexados após o descarte, garantindo `Σ residents == Σ jobs
+  == Σ pop.size`.
 - **Geração não-demanda**: roads, `buildings_index` (`json`+`bin`), aeroportos,
   `ocean_depth_index` e o PMTiles basemap (com labels) são gerados pela biblioteca
   oficial [`depot`](https://github.com/Subway-Builder-Modded/depot); prédios vêm do
@@ -157,6 +166,11 @@ São Paulo**.
 - **Prédios**: o campo `f` do `buildings_index` é a **profundidade de fundação**
   (subsolos, default 1) que o jogo lê como `foundationDepth` ao tunelar sob prédios —
   não os andares acima.
+- **Notas sobre o `depot`**: [`docs/depot-performance.md`](docs/depot-performance.md)
+  (gargalos medidos e propostas de otimização upstream) e
+  [`docs/depot-issues.md`](docs/depot-issues.md) (bugs da 1.2.4 e mudanças de
+  comportamento). O benchmark que embasa a primeira vive em
+  `benchmarks/depot_tile_worker.py`.
 
 Inspirado no ecossistema [Subway Builder Modded](https://github.com/Subway-Builder-Modded).
 

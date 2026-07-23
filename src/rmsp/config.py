@@ -107,18 +107,29 @@ class Settings:
     demand_release_url: str = env_str(
         "RMSP_DEMAND_URL",
         "https://github.com/roquerodrigo/subway-builder-rmsp-demand-data/releases/download/"
-        "v1.0.0/demand_data.json.gz",
+        "v2.0.0/demand_data.json.gz",
     )
     # Inject depot code-prefixed POIs (rmsp.specials.POIS) into demand_data.json before routing.
-    special_demand: bool = env_bool("RMSP_SPECIAL_DEMAND", True)
+    # Off by default: the demand-data release already carries named OSM destinations, so the
+    # curated POIs are opt-in (RMSP_SPECIAL_DEMAND=1).
+    special_demand: bool = env_bool("RMSP_SPECIAL_DEMAND", False)
 
     # 5000 is taken by macOS Control Center (AirPlay). OSRM calls are localhost-bound, so
     # over-subscribe the workers.
     osrm_port: int = env_int("RMSP_OSRM_PORT", 5050)
     route_workers: int = env_int("RMSP_ROUTE_WORKERS", 16)
     # Douglas-Peucker tolerance on the routed path (degrees). ~80 m keeps the road shape
-    # readable; paired with OSRM overview=full so fidelity is controlled here.
+    # readable; paired with OSRM overview=full so fidelity is controlled here. Only used when
+    # straight_path_geometry is off.
     path_simplify_eps: float = env_float("RMSP_PATH_SIMPLIFY_EPS", 0.0008)
+    # Drop commutes whose routed car distance is under this many metres — short, local trips
+    # the metro can't realistically win. 0 disables the filter. The point index (popIds,
+    # residents, jobs) is rebuilt afterwards and demand-less points are dropped.
+    min_driving_distance_m: float = env_float("RMSP_MIN_DRIVING_DISTANCE_M", 2000.0)
+    # The game draws each commute as a straight line between its two points, so collapse
+    # drivingPath to [origin, destination] instead of Douglas-Peucker — same look, far smaller.
+    # The real OSRM drivingSeconds/drivingDistance are kept. False keeps the road-following line.
+    straight_path_geometry: bool = env_bool("RMSP_STRAIGHT_PATH_GEOMETRY", True)
     # Skip OSRM and connect each pop's two points with a direct segment (distance from the
     # equirectangular metric, seconds from route_straight_speed_kmh). Near-instant, no geometry.
     route_straight_line: bool = env_bool("RMSP_ROUTE_STRAIGHT_LINE", False)

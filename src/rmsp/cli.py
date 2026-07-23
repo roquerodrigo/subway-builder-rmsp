@@ -57,7 +57,8 @@ def cmd_specials() -> None:
 
 @app.command()
 def routes() -> None:
-    """Build the OSRM graph and replace pop drivingPaths with real road routes."""
+    """Build the OSRM graph, route each commute on the road network, drop the short trips
+    (RMSP_MIN_DRIVING_DISTANCE_M) and lay down the final straight-line trip geometry."""
     routing.routes()
 
 
@@ -82,11 +83,13 @@ def bundle(
 
 @app.command(name="all")
 def cmd_all() -> None:
-    """Full pipeline: sources -> generate -> demand -> specials -> routes -> validate.
+    """Full pipeline: sources -> generate -> demand -> [specials] -> routes -> validate.
 
-    Demand is downloaded from the demand-data release (`demand`), not built here. Produces
-    the validated data in data/build + data/tiles; run `rmsp bundle` to package the Railyard
-    map .zip you then import locally into Railyard."""
+    Demand is downloaded from the demand-data release (`demand`), not built here. Special
+    demand POIs are opt-in (RMSP_SPECIAL_DEMAND). `routes` also drops short commutes and
+    straightens the trip geometry (see its config knobs). Produces the validated data in
+    data/build + data/tiles; run `rmsp bundle` to package the Railyard map .zip you then
+    import locally into Railyard."""
     sources.acquire()
     generate.generate_base(verbose=_state["verbose"])
     demand.fetch()

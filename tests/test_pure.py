@@ -1,6 +1,6 @@
 """Unit tests for the deterministic, dependency-free helpers."""
 
-from rmsp import publish, routing
+from rmsp import demand_filter, publish, routing
 
 
 def test_publish_config_required_fields():
@@ -29,3 +29,38 @@ def test_rdp_keeps_sharp_corner():
 
 def test_rdp_short_path_unchanged():
     assert routing.rdp([[0, 0], [1, 1]], eps=0.001) == [[0, 0], [1, 1]]
+
+
+def _demand():
+    return {
+        "points": [
+            {"id": "A", "location": [0, 0], "jobs": 0, "residents": 10, "popIds": ["p1", "p2"]},
+            {"id": "B", "location": [1, 1], "jobs": 10, "residents": 0, "popIds": []},
+            {"id": "C", "location": [2, 2], "jobs": 3, "residents": 0, "popIds": []},
+        ],
+        "pops": [
+            {"id": "p1", "size": 7, "residenceId": "A", "jobId": "B", "drivingDistance": 5000},
+            {"id": "p2", "size": 3, "residenceId": "A", "jobId": "C", "drivingDistance": 800},
+        ],
+    }
+
+
+def test_prune_drops_short_commutes_and_rebuilds_points():
+    pruned = demand_filter.prune_short_commutes(_demand(), 1000)
+    # the 800 m commute p2 (and its now-demand-less destination C) is gone
+    assert [p["id"] for p in pruned["pops"]] == ["p1"]
+    assert {p["id"] for p in pruned["points"]} == {"A", "B"}
+
+
+def test_prune_reindexes_popids_residents_jobs():
+    pruned = demand_filter.prune_short_commutes(_demand(), 1000)
+    by_id = {p["id"]: p for p in pruned["points"]}
+    assert by_id["A"]["popIds"] == ["p1"]  # p2 removed from the index
+    assert by_id["A"]["residents"] == 7  # recomputed from survivors, not the original 10
+    assert by_id["B"]["jobs"] == 7
+
+
+def test_prune_zero_threshold_keeps_everything():
+    pruned = demand_filter.prune_short_commutes(_demand(), 0)
+    assert len(pruned["pops"]) == 2
+    assert len(pruned["points"]) == 3

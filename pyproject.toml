@@ -1,6 +1,6 @@
 [project]
 name = "subway-builder-rmsp"
-version = "0.1.0"
+version = "4.0.0"
 description = "RMSP (São Paulo) custom-city map generator for Subway Builder"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -11,7 +11,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from rmsp import external, geojson
+from rmsp import demand_filter, external, geojson
 from rmsp.config import settings
 
 log = logging.getLogger(__name__)
@@ -139,6 +139,32 @@ def straight_line_pops() -> None:
     )
 
 
+def straighten_paths() -> None:
+    """Collapse each pop's drivingPath to a straight [origin, destination] segment.
+    The game renders a commute as a straight line between its two points, so the routed
+    polyline's intermediate vertices are dead weight; the real OSRM drivingSeconds/
+    drivingDistance are kept."""
+    path = settings.build_dir / "demand_data.json"
+    demand = json.loads(path.read_text())
+    loc = {p["id"]: p["location"] for p in demand["points"]}
+    before = after = 0
+    for pop in demand["pops"]:
+        o, d = loc.get(pop["residenceId"]), loc.get(pop["jobId"])
+        if o is None or d is None:
+            continue
+        before += len(pop.get("drivingPath", []))
+        pop["drivingPath"] = [[round(o[0], 5), round(o[1], 5)], [round(d[0], 5), round(d[1], 5)]]
+        after += 2
+    geojson.write_json(demand, path)
+    out = settings.build_dir / "demand_data.json.gz"
+    geojson.write_json_gz(demand, out)
+    n = len(demand["pops"]) or 1
+    log.info(
+        "paths straightened: %d -> %d pts (avg %.1f -> %.1f) -> %s (%.2f MB)",
+        before, after, before / n, after / n, out.name, geojson.mb(out),
+    )
+
+
 def _perp(p, a, b) -> float:
     ax, ay = a
     bx, by = b
@@ -193,12 +219,21 @@ def simplify_paths(eps: float | None = None) -> None:
     )
 
 
+def _prune_short_commutes() -> None:
+    if settings.min_driving_distance_m > 0:
+        demand_filter.drop_short_commutes(settings.min_driving_distance_m)
+
+
 def routes() -> None:
-    """Full routing step. With RMSP_ROUTE_STRAIGHT_LINE set, connect each pop's points
-    with a direct segment (no OSRM); otherwise build the graph, serve, route, simplify."""
+    """Full routing step: build the OSRM graph, route each commute on the road network,
+    drop the short ones (min_driving_distance_m), then lay down the final trip geometry —
+    a straight origin->destination segment (straight_path_geometry, the game's own rendering)
+    or the Douglas-Peucker road line. With RMSP_ROUTE_STRAIGHT_LINE set, connect each pop's
+    points directly without OSRM."""
     if settings.route_straight_line:
         log.info("straight-line routing (RMSP_ROUTE_STRAIGHT_LINE)")
         straight_line_pops()
+        _prune_short_commutes()
         return
     build_graph()
     proc = external.popen(
@@ -210,4 +245,8 @@ def routes() -> None:
         route_pops()
     finally:
         proc.terminate()
-    simplify_paths()
+    _prune_short_commutes()
+    if settings.straight_path_geometry:
+        straighten_paths()
+    else:
+        simplify_paths()

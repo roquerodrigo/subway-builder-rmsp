@@ -78,8 +78,8 @@ def bundle(
     repo: str | None = None,
     changelog: str = "Primeira versão.",
 ) -> None:
-    """Write dist/<CODE>.zip (the release asset) and dist/<CODE>.json (the Update
-    JSON) at the project root. ``repo`` is the GitHub repo URL used to build the
+    """Write dist/<CODE>-<version>.zip (the release asset) and dist/<CODE>.json (the
+    Update JSON) at the project root. ``repo`` is the GitHub repo URL used to build the
     download link, e.g. https://github.com/<owner>/subway-builder-rmsp."""
     dist = settings.dist_dir
     dist.mkdir(parents=True, exist_ok=True)
@@ -105,7 +105,8 @@ def bundle(
         else:
             log.warning("optional %s not built — skipping", name)
 
-    zip_path = dist / f"{settings.code}.zip"
+    zip_name = f"{settings.code}-{version}.zip"  # version in the filename (e.g. RMSP-4.0.0.zip)
+    zip_path = dist / zip_name
     with zipfile.ZipFile(zip_path, "w") as z:
         for m in members:
             # config.json compresses; .gz/.pmtiles are already compressed -> store
@@ -122,9 +123,9 @@ def bundle(
     log.info("  files: %s", ", ".join(m.name for m in members))
 
     download = (
-        f"{repo.rstrip('/')}/releases/download/v{version}/{settings.code}.zip"
+        f"{repo.rstrip('/')}/releases/download/v{version}/{zip_name}"
         if repo
-        else f"<RELEASE_URL>/{settings.code}.zip"
+        else f"<RELEASE_URL>/{zip_name}"
     )
     update = {
         "schema_version": 1,

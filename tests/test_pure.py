@@ -6,9 +6,10 @@ from rmsp import demand_filter, publish, routing
 def test_publish_config_required_fields():
     # the registry rejects a map whose config.json lacks code/version or a numeric
     # initialViewState (scripts/lib/integrity.ts + map-demand-stats extraction)
-    cfg = publish._config("2.3.4")
+    cfg = publish._config("2.3.4", 1_234_567)
     assert cfg["code"] == "RMSP"
     assert cfg["version"] == "2.3.4"
+    assert cfg["population"] == 1_234_567
     ivs = cfg["initialViewState"]
     assert set(ivs) == {"latitude", "longitude", "zoom", "bearing"}
     assert all(isinstance(ivs[k], (int, float)) for k in ivs)

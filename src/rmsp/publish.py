@@ -39,7 +39,20 @@ _DATA_FILES = (
 _OPTIONAL_DATA_FILES = ("ocean_depth_index.json.gz",)
 
 
-def _config(version: str) -> dict:
+def simulated_population() -> int:
+    """The population the city actually simulates: Σ ``pop.size`` in the built demand.
+
+    Not the census figure for the region — the demand is published at a game scale and the
+    routing step drops the commutes the metro cannot win, so this is what the game has to
+    move every day."""
+    path = settings.build_dir / "demand_data.json"
+    if not path.exists():
+        raise RuntimeError(f"missing {path} — run `rmsp demand` / `rmsp routes` first")
+    demand = json.loads(path.read_text())
+    return sum(pop["size"] for pop in demand["pops"])
+
+
+def _config(version: str, population: int) -> dict:
     """config.json — the registry requires code, version and a numeric
     initialViewState; the game also reads name/population/minZoom for the city.
     ``specialDemandTypes`` lists the special demand codes present in demand_data.json
@@ -50,7 +63,7 @@ def _config(version: str) -> dict:
         "description": settings.description,
         "version": version,
         "country": "BR",
-        "population": settings.population,
+        "population": population,
         "minZoom": settings.min_zoom,
         "initialViewState": {
             "latitude": settings.center_lat,
@@ -88,8 +101,9 @@ def bundle(
     if not pmtiles.exists():
         raise RuntimeError(f"missing {pmtiles} — run `rmsp generate` first")
 
+    population = settings.population or simulated_population()
     cfg = dist / "config.json"
-    cfg.write_text(json.dumps(_config(version), ensure_ascii=False, indent=2), "utf-8")
+    cfg.write_text(json.dumps(_config(version, population), ensure_ascii=False, indent=2), "utf-8")
 
     # gather flat members (config + data .gz + the basemap pmtiles)
     members = [cfg, pmtiles]

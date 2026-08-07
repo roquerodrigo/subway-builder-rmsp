@@ -64,7 +64,10 @@ class Settings:
         "Região Metropolitana de São Paulo com demanda real da "
         "Pesquisa Origem-Destino do Metrô-SP.",
     )
-    population: int = env_int("RMSP_POPULATION", 22_800_000)  # Σ Censo 2022 no bbox (~22.8M)
+    # População declarada no config.json do bundle. 0 = a que o mapa de fato simula (Σ size
+    # dos pops depois da escala de jogo e do descarte de trajetos curtos), que é o número que
+    # dita o custo da simulação. Um valor > 0 sobrescreve (ex.: 22_800_000, Censo 2022 no bbox).
+    population: int = env_int("RMSP_POPULATION", 0)
     center_lat: float = env_float("RMSP_CENTER_LAT", -23.5505)  # Praça da Sé
     center_lng: float = env_float("RMSP_CENTER_LNG", -46.6333)
     zoom: float = env_float("RMSP_ZOOM", 9)  # abre enquadrando a RMSP inteira
@@ -107,7 +110,7 @@ class Settings:
     demand_release_url: str = env_str(
         "RMSP_DEMAND_URL",
         "https://github.com/roquerodrigo/subway-builder-rmsp-demand-data/releases/download/"
-        "v2.0.0/demand_data.json.gz",
+        "v3.0.0/demand_data.json.gz",
     )
     # Inject depot code-prefixed POIs (rmsp.specials.POIS) into demand_data.json before routing.
     # Off by default: the demand-data release already carries named OSM destinations, so the

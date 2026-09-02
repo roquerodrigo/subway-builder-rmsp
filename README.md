@@ -1,5 +1,7 @@
 # RMSP — São Paulo para Subway Builder
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/roquerodrigo)
+
 Gera uma cidade jogável da **Região Metropolitana de São Paulo
 inteira** (capital + ABC + Guarulhos + Osasco/Barueri + Mogi + periferia) para
 o jogo [Subway Builder](https://www.subwaybuilder.com), empacotada como um mapa
@@ -173,6 +175,10 @@ São Paulo**.
   `benchmarks/depot_tile_worker.py`.
 
 Inspirado no ecossistema [Subway Builder Modded](https://github.com/Subway-Builder-Modded).
+
+## Apoie o projeto
+
+Este projeto é desenvolvido e mantido em tempo pessoal. Se for útil para você, considere [patrocinar o trabalho](https://github.com/sponsors/roquerodrigo) — é o que mantém o desenvolvimento, os testes e as publicações acontecendo.
 
 ## Licença
 
